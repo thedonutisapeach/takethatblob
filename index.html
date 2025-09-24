@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>House & Blob Game</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: white;
+    cursor: none; /* Hide default cursor */
+  }
+  #house {
+    position: absolute;
+    user-select: none;
+    pointer-events: none;
+    z-index: 2; /* always in front */
+    transform: scale(0.5); /* half size */
+    transform-origin: center center;
+  }
+  #blob {
+    position: absolute;
+    user-select: none;
+    pointer-events: none;
+    z-index: 1; /* behind house */
+    transform: scale(0.5); /* half size */
+    transform-origin: center center;
+  }
+  .popup {
+    position: absolute;
+    color: black;
+    font-family: monospace;
+    font-size: 64px; /* 4x size */
+    font-weight: bold;
+    z-index: 3; /* above everything */
+    pointer-events: none;
+    user-select: none;
+  }
+</style>
+</head>
+<body>
+
+<img id="house" src="HOUSE1.png" />
+<img id="blob" src="BLOBIDLE.png" />
+
+<script>
+const house = document.getElementById('house');
+const blob = document.getElementById('blob');
+
+// House click images
+const houseKickImages = ['HOUSEKICK1.png', 'HOUSEKICK2.png'];
+let houseKickIndex = 0;
+
+// Blob click images
+const blobReactImages = ['BLOBREACT01.png', 'BLOBREACT02.png'];
+let blobReactIndex = 0;
+
+// Popup messages (weighted so "take that" is more frequent)
+const messages = ["oops", "bam", "take that", "take that", "take that", "oopsie", "omg"];
+
+// Blob position and movement
+let blobX = 100, blobY = 100;
+let blobSpeedX = 2, blobSpeedY = 2;
+
+// Track mouse
+let mouseX = window.innerWidth / 2;
+let mouseY = window.innerHeight / 2;
+
+document.addEventListener('mousemove', e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    house.style.left = mouseX - house.width / 4 + 'px'; // half size adjustment
+    house.style.top = mouseY - house.height / 4 + 'px';
+});
+
+// House click logic
+document.addEventListener('click', () => {
+    // Change house image temporarily
+    house.src = houseKickImages[houseKickIndex];
+    houseKickIndex = (houseKickIndex + 1) % houseKickImages.length;
+    
+    // Check collision with blob
+    if (isColliding(house, blob)) {
+        // Change blob image temporarily
+        blob.src = blobReactImages[blobReactIndex];
+        blobReactIndex = (blobReactIndex + 1) % blobReactImages.length;
+        setTimeout(() => {
+            blob.src = 'BLOBIDLE.png';
+        }, 3000); // 3 seconds
+    }
+
+    // Show random popup message
+    const popup = document.createElement('div');
+    popup.className = 'popup';
+    popup.textContent = messages[Math.floor(Math.random() * messages.length)];
+    popup.style.left = mouseX + 'px';
+    popup.style.top = (mouseY - 20) + 'px'; // slightly above the house
+    document.body.appendChild(popup);
+
+    setTimeout(() => {
+        popup.remove();
+    }, 1000); // lasts 1 second
+
+    // Return house image after click ends
+    setTimeout(() => {
+        house.src = 'HOUSE1.png';
+    }, 100); // very short delay to mimic click
+});
+
+// Simple collision detection
+function isColliding(img1, img2) {
+    const rect1 = img1.getBoundingClientRect();
+    const rect2 = img2.getBoundingClientRect();
+    return !(rect1.right < rect2.left || 
+             rect1.left > rect2.right || 
+             rect1.bottom < rect2.top || 
+             rect1.top > rect2.bottom);
+}
+
+// Animate blob movement
+function animateBlob() {
+    blobX += blobSpeedX;
+    blobY += blobSpeedY;
+
+    const blobWidth = blob.width * 0.5; // scaled
+    const blobHeight = blob.height * 0.5;
+
+    // Bounce off edges
+    if(blobX < 0 || blobX > window.innerWidth - blobWidth) blobSpeedX *= -1;
+    if(blobY < 0 || blobY > window.innerHeight - blobHeight) blobSpeedY *= -1;
+
+    blob.style.left = blobX + 'px';
+    blob.style.top = blobY + 'px';
+
+    requestAnimationFrame(animateBlob);
+}
+
+animateBlob();
+</script>
+
+</body>
+</html>
